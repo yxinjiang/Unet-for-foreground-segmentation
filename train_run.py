@@ -24,7 +24,6 @@ from eval import eval_net
 from imutils import paths
 from PIL import Image
 
-
 torch.cuda.manual_seed_all(2019)
 torch.manual_seed(2019)
 
@@ -142,8 +141,7 @@ def test_customer_img_list(sess,img_paths=[]):
             img = cv2.imread(pth)
             frame = img.copy()
             width,height,_ = img.shape
-            img = np.asarray(cv2.resize(img,(sess.width,sess.height))).astype('float32')
-            
+            img = np.asarray(cv2.resize(img,(sess.width,sess.height))).astype('float32')            
             cv2.imwrite('test results/'+fname+'_input.png',frame)
             img = np.transpose(normalize(img),(2,0,1))
             img = np.expand_dims(img,0)
@@ -158,9 +156,25 @@ def test_customer_img_list(sess,img_paths=[]):
             ind = mask_pre_resize[:,:]>0
             ind = np.dstack((ind, ind, ind))
             cv2.imwrite('test results/'+fname+'_input_with_mask_INTER_NEAREST.png',np.multiply(frame,ind))
+            mask_processed = find_max_contour(mask_pre_resize)
+            cv2.imwrite('test results/'+fname+'_mask_processed.png',mask_processed)
         print('total %d images processed....'%len(img_paths))
 
 
+def find_max_contour(image):
+    image = image.astype('uint8')
+    nb_components, labels, stats, _ = cv2.connectedComponentsWithStats(image, connectivity=4)
+    sizes = stats[:, -1]
+
+    max_label = 1
+    max_size = sizes[1]
+    for i in range(2, nb_components):
+        if sizes[i] > max_size:
+            max_label = i
+            max_size = sizes[i]
+    img2 = np.zeros(labels.shape)
+    img2[labels == max_label] = 255
+    return img2
 
 if __name__ == "__main__":
     '''
@@ -177,7 +191,7 @@ if __name__ == "__main__":
     sess.pretrained=False
     sess.save_step = 40
     sess.epochs = 16
-    sess.run_train_val()
+    #sess.run_train_val()
     img_paths = list(paths.list_images('C:\\Users\\yixin\\Pictures\\QQplayerPic'))
     test_customer_img_list(sess,img_paths)
    #run_train_camvid_dataloader(sess)

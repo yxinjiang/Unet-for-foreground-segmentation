@@ -104,4 +104,5 @@ logs/
 test results/
 *.csv
 test samples/
-*.pth
+models/*.pth
+
